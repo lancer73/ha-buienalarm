@@ -140,7 +140,7 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator):
                                 next_period = 'wet'
                                 break
                     
-                    next_rain_formatted = "00:00"
+                    next_rain_formatted = "-"
                     if next_rain_time:
                         # Converteer timestamp naar leesbare tijd
                         next_rain_datetime = datetime.datetime.fromtimestamp(next_rain_time)
