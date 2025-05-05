@@ -48,6 +48,8 @@ The sensor contains the following attributes:
   - `precip`: The expected precipitation in mm/h
   - `attime`: The timestamp for this forecast
 - `raw_data`: The complete raw data from the BuienAlarm API
+- `period_start`: The start of the next rain or ending of the rainshower
+- `period_type`: What period_start signifies, If `wet` then it is the time for the next shower, `dry` for the end of the current shower, or `nan` when there is no change in sight
 
 ## Example Automations
 
