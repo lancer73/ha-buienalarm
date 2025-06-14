@@ -17,11 +17,9 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass, entry):
     """Stel een BuienAlarm config entry in."""
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 async def async_unload_entry(hass, entry):
     """Verwijder een BuienAlarm config entry."""
-    return await hass.config_entries.async_forward_entry_unload(entry, PLATFORMS)
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
