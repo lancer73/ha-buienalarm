@@ -111,7 +111,10 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator):
                     if not data.get("precip", []):
                         return {
                             "next_rain": self.strings["no_rain"],
+                            "next_period": "nan",
+                            "period_start": "-",
                             "precipitation": [],
+                            "raw_data": data, 
                         }
                     
                     # Verwerk de voorspellingsdata
