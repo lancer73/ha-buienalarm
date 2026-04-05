@@ -10,7 +10,6 @@ import json
 from typing import Any, Dict, Optional
  
 import aiohttp
-import async_timeout
  
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -88,7 +87,7 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch data from BuienAlarm API."""
         try:
-            with async_timeout.timeout(10):
+            async with async_timeout.timeout(10):
                 url = API_URL.format(lat=self.latitude, lon=self.longitude)
                 async with self.session.get(url) as response:
                     if response.status != 200:
