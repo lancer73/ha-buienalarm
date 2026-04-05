@@ -87,7 +87,7 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch data from BuienAlarm API."""
         try:
-            async with async_timeout.timeout(10):
+            async with asyncio.timeout(10):
                 url = API_URL.format(lat=self.latitude, lon=self.longitude)
                 async with self.session.get(url) as response:
                     if response.status != 200:
