@@ -21,7 +21,7 @@ ATTR_PERIOD_START = "period_start"
 ATTR_TIME = "attime"
 
 # Buienalarm API URL
-API_URL = "https://cdn-secure.buienalarm.nl/api/3.4/forecast.php?lat={lat}&lon={lon}&region=nl&unit=mm/u"
+API_URL = "https://cdn-secure.buienalarm.nl/api/3.4/forecast.php?lat={lat}&lon={lon}&region=nl&unit=mm%2Fu"
 
 # Taalspecifieke constanten
 LANGUAGE_STRINGS = {
