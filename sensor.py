@@ -3,6 +3,7 @@ Platform voor de BuienAlarm regen voorspelling sensor.
 """
  
 import asyncio
+import socket
 import datetime
 import logging
 from datetime import timedelta
@@ -10,6 +11,9 @@ import json
 from typing import Any, Dict, Optional
  
 import aiohttp
+
+connector = aiohttp.TCPConnector(family=socket.AF_INET)
+self.session = aiohttp.ClientSession(connector=connector)
  
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
