@@ -1,0 +1,13 @@
+{
+  "domain": "buienalarm",
+  "name": "BuienAlarm",
+  "codeowners": ["@lancer73"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/lancer73/ha-buienalarm",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/lancer73/ha-buienalarm/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

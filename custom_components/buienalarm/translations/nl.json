@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Voer de locatie in waarvoor regenvoorspellingen opgehaald moeten worden.",
+        "data": {
+          "latitude": "Breedtegraad",
+          "longitude": "Lengtegraad",
+          "scan_interval": "Verversinterval (minuten)",
+          "language": "Taal"
+        },
+        "data_description": {
+          "latitude": "Breedtegraad van de te voorspellen locatie.",
+          "longitude": "Lengtegraad van de te voorspellen locatie.",
+          "scan_interval": "Hoe vaak gegevens worden ververst (1-60 minuten).",
+          "language": "Taal voor de leesbare statustekst van de volgende bui."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbinden met BuienAlarm is mislukt.",
+      "invalid_response": "BuienAlarm gaf een onverwacht antwoord.",
+      "unknown": "Onverwachte fout."
+    },
+    "abort": {
+      "already_configured": "Deze locatie is al geconfigureerd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Verversinterval (minuten)",
+          "language": "Taal"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Volgende bui"
+      },
+      "shower_start": {
+        "name": "Start volgende bui"
+      },
+      "shower_end": {
+        "name": "Einde huidige bui"
+      },
+      "level_light": {
+        "name": "Drempel licht"
+      },
+      "level_moderate": {
+        "name": "Drempel gemiddeld"
+      },
+      "level_heavy": {
+        "name": "Drempel zwaar"
+      }
+    }
+  }
+}

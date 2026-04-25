@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Enter the location to fetch rain forecasts for.",
+        "data": {
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "scan_interval": "Scan interval (minutes)",
+          "language": "Language"
+        },
+        "data_description": {
+          "latitude": "Latitude of the location to forecast for.",
+          "longitude": "Longitude of the location to forecast for.",
+          "scan_interval": "How often to refresh data (1-60 minutes).",
+          "language": "Language used for the human-readable next-rain status text."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to BuienAlarm.",
+      "invalid_response": "BuienAlarm returned an unexpected response.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Scan interval (minutes)",
+          "language": "Language"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Next shower"
+      },
+      "shower_start": {
+        "name": "Next shower start"
+      },
+      "shower_end": {
+        "name": "Current shower end"
+      },
+      "level_light": {
+        "name": "Light threshold"
+      },
+      "level_moderate": {
+        "name": "Moderate threshold"
+      },
+      "level_heavy": {
+        "name": "Heavy threshold"
+      }
+    }
+  }
+}
