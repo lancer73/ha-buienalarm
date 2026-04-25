@@ -23,6 +23,8 @@ forecast data for any location in the Netherlands.
 - Diagnostics support — download a JSON dump of the integration state for
   troubleshooting, with latitude/longitude redacted automatically
 - Bilingual UI (Dutch and English)
+- Companion Lovelace card available as a separate HACS install — see
+  [Dashboard card](#dashboard-card) below
 
 For the Dutch version of this README, see [`installation.md`](installation.md).
 
@@ -139,114 +141,33 @@ still works, but the timestamp sensor is the cleaner trigger because it only
 fires when an actual transition is detected and never on every text-format
 update.
 
-## Dashboard
+## Dashboard card
 
-### Apex Charts card
+A companion Lovelace card is available as a separate HACS install:
+[**lovelace-buienalarm-card**](https://github.com/lancer73/lovelace-buienalarm-card).
+It pairs with this integration and reads its sensors directly — no
+templating or `data_generator` needed.
 
-The example below is updated for v1.0.0. It pulls the precipitation forecast
-from the `rain_forecast` attribute and the three threshold lines from the
-new dedicated sensors. The status sensor is referenced for the forecast
-data, but each threshold line reads from its own sensor.
+![BuienAlarm Card screenshot](https://raw.githubusercontent.com/lancer73/lovelace-buienalarm-card/main/images/screenshot.png)
+
+Install it via HACS (*Custom repositories → category Dashboard*), then add
+the card from the Lovelace card picker. Minimal YAML:
 
 ```yaml
-type: custom:apexcharts-card
-graph_span: 2h
-span:
-  start: minute
-  offset: "-10m"
-now:
-  show: true
-  label: Now
-header:
-  show: false
-yaxis:
-  - decimals: 2
-    min: 0
-apex_config:
-  legend:
-    show: false
-  grid:
-    yaxis:
-      lines:
-        show: false
-  xaxis:
-    tooltip:
-      enabled: false
-  chart:
-    height: 200px
-series:
-  - entity: sensor.buienalarm_next_shower
-    stroke_width: 6
-    float_precision: 2
-    name: Forecast
-    type: column
-    opacity: 1
-    color: royalblue
-    data_generator: |
-      return entity.attributes.rain_forecast.map((data) => {
-        return [new Date(data['attime'] * 1000), data['precip']];
-      });
-  - entity: sensor.buienalarm_next_shower
-    float_precision: 2
-    type: line
-    name: Light
-    stroke_width: 2
-    stroke_dash: 4
-    show:
-      legend_value: false
-    color: green
-    opacity: 1
-    data_generator: |
-      const threshold = Number(
-        hass.states['sensor.buienalarm_light_threshold'].state
-      );
-      return entity.attributes.rain_forecast.map((data) => {
-        return [new Date(data['attime'] * 1000), threshold];
-      });
-  - entity: sensor.buienalarm_next_shower
-    float_precision: 2
-    type: line
-    name: Moderate
-    stroke_width: 2
-    stroke_dash: 4
-    show:
-      legend_value: false
-    color: orange
-    opacity: 1
-    data_generator: |
-      const threshold = Number(
-        hass.states['sensor.buienalarm_moderate_threshold'].state
-      );
-      return entity.attributes.rain_forecast.map((data) => {
-        return [new Date(data['attime'] * 1000), threshold];
-      });
-  - entity: sensor.buienalarm_next_shower
-    float_precision: 2
-    type: line
-    name: Heavy
-    stroke_width: 2
-    stroke_dash: 4
-    show:
-      legend_value: false
-    color: red
-    opacity: 1
-    data_generator: |
-      const threshold = Number(
-        hass.states['sensor.buienalarm_heavy_threshold'].state
-      );
-      return entity.attributes.rain_forecast.map((data) => {
-        return [new Date(data['attime'] * 1000), threshold];
-      });
+type: custom:buienalarm-card
+next_shower_sensor: sensor.buienalarm_next_shower
+light: sensor.buienalarm_light_threshold
+moderate: sensor.buienalarm_moderate_threshold
+heavy: sensor.buienalarm_heavy_threshold
 ```
 
-> **How this works.** All four series use the next-shower sensor as their
-> `entity` — so the time axis comes from one place: the `rain_forecast`
-> attribute. The three threshold series then pull their *value* from the
-> dedicated threshold sensors via `hass.states[...]` inside the
-> `data_generator`. This replaces the old `entity.attributes.raw_data.levels.*`
-> path, which no longer exists in 1.0.0.
+Full configuration options, screenshots, and YAML examples are in the
+card's [README](https://github.com/lancer73/lovelace-buienalarm-card#readme).
 
-### Simple entities card
+### Without the companion card
+
+If you'd rather not install another HACS package, the integration's
+sensors work with any standard Lovelace card. A simple entities card:
 
 ```yaml
 type: entities
@@ -256,6 +177,14 @@ entities:
   - entity: sensor.buienalarm_next_shower_start
   - entity: sensor.buienalarm_current_shower_end
 ```
+
+For a chart, the `apexcharts-card` community card works well too: configure
+all series against the next-shower sensor, drive the time axis from its
+`rain_forecast` attribute, and read each threshold value with
+`hass.states['sensor.buienalarm_light_threshold'].state` (and similarly for
+`moderate`/`heavy`) inside the series' `data_generator`. The companion card
+above does this and more, with a visual editor — recommended unless you
+specifically want the `apexcharts-card` look.
 
 ## Privacy and security
 
@@ -278,11 +207,12 @@ Upgrade in place via HACS. On first restart the integration will:
    exports.
 3. Bump the entry version from 1 to 2.
 
-If your dashboards reference the `raw_data` attribute (e.g. the older Apex
-Charts example for `levels.light`/`moderate`/`heavy`), update them to use
-the new threshold sensors as shown above. The status sensor's other
-attributes (`rain_forecast`, `period_type`, `period_start`,
-`next_rain_forecast`) are unchanged.
+If your dashboards reference the `raw_data` attribute (e.g. an older
+`apexcharts-card` example reading `attributes.raw_data.levels.light`),
+update them to read from the dedicated threshold sensors instead, or
+install the [companion card](#dashboard-card) which handles this for you.
+The status sensor's other attributes (`rain_forecast`, `period_type`,
+`period_start`, `next_rain_forecast`) are unchanged.
 
 See [`CHANGES.md`](CHANGES.md) for the full changelog.
 
@@ -300,6 +230,12 @@ If the integration is not working as expected:
    within the BuienAlarm coverage area (the Netherlands and immediately
    surrounding regions).
 4. Check the Home Assistant log for messages from the `buienalarm` logger.
+
+## Related projects
+
+- [**lovelace-buienalarm-card**](https://github.com/lancer73/lovelace-buienalarm-card)
+  — Lovelace card that visualises this integration's sensors. HACS
+  *Dashboard* category. Optional, but recommended.
 
 ## License
 
