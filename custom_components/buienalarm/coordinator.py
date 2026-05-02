@@ -172,23 +172,41 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         now_ts = dt_util.utcnow().timestamp()
 
-        # Find the next time the forecast crosses the rain threshold.
-        # Decisions only consider forecast points in the future.
-        currently_raining = forecast[0][ATTR_PRECIPITATION] >= RAIN_THRESHOLD
-
+        # Determine "currently raining" from the forecast point that
+        # corresponds to *now*, not blindly from forecast[0]. forecast[0]
+        # may be in the past (when the API's 'start' precedes our poll
+        # time) or in the future (when 'start' lies ahead), so it can
+        # disagree with the actual present-time precipitation level.
+        # We walk the forecast once: the last past-or-equal point gives
+        # us the present, and future points give us upcoming transitions.
         shower_start_ts: float | None = None
         shower_end_ts: float | None = None
 
-        # Walk the forecast once. Capture the *next* upcoming start of rain
-        # and the *next* upcoming end of rain (transitions only).
-        prev_wet = currently_raining
+        # prev_wet starts at None; the first past point we see seeds it.
+        # If the entire forecast is in the future (no past points), we
+        # treat 'before the forecast began' as dry.
+        prev_wet: bool | None = None
+        currently_raining = False  # final value set during the loop
+
         for item in forecast:
             ts = item[ATTR_TIME]
+            is_wet = item[ATTR_PRECIPITATION] >= RAIN_THRESHOLD
+
             if ts <= now_ts:
-                prev_wet = item[ATTR_PRECIPITATION] >= RAIN_THRESHOLD
+                # Past or present point: just track running 'wet' state.
+                prev_wet = is_wet
+                # The most recent past-or-equal point IS "currently
+                # raining" — keep updating until we cross into the future.
+                currently_raining = is_wet
                 continue
 
-            is_wet = item[ATTR_PRECIPITATION] >= RAIN_THRESHOLD
+            # First future iteration: if we never saw a past point,
+            # initialise prev_wet from the assumption the period before
+            # the forecast started was dry. This only triggers when the
+            # whole forecast lies ahead of us, which is unusual but
+            # possible for a freshly-started integration.
+            if prev_wet is None:
+                prev_wet = False
 
             # Transition from dry -> wet = a shower starts at this point.
             if is_wet and not prev_wet and shower_start_ts is None:
