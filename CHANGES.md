@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-04-25
+
+### Fixed
+
+- **Status sensor briefly reporting "no rain expected" while it was
+  actually raining.** The "currently raining?" decision was based on
+  `forecast[0]`, which can be in the past, present, or near-future
+  depending on how the API's `start` aligns with the integration's
+  poll time. When `forecast[0]` was a past dry sample, the past-points
+  walk could correctly transition into "wet" state and capture an
+  upcoming end-of-shower timestamp, while the headline path still
+  thought it was dry — yielding the contradictory state of:
+    - Status text: "no rain expected"
+    - Current shower end: a real timestamp
+    - Next shower start: unknown
+  The two views are now derived from a single walk through the
+  forecast: "currently raining" is taken from the most recent
+  past-or-equal forecast point, never from `forecast[0]`. The
+  contradictory transient state can no longer occur.
+
 ## [1.0.0] - 2026-04-25
 
 First stable release. The integration has been restructured to follow current
