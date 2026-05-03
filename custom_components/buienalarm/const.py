@@ -56,6 +56,7 @@ RAIN_THRESHOLD: Final = 0.1  # mm/h
 LANGUAGE_STRINGS: Final[dict[str, dict[str, str]]] = {
     "nl": {
         "no_rain": "Geen regen verwacht",
+        "raining_now": "Het regent",
         "next_rain_minutes": "over {minutes} minuten",
         "next_rain_hour": "over {hours} uur",
         "next_rain_hour_minutes": "over {hours} uur en {minutes} minuten",
@@ -68,6 +69,7 @@ LANGUAGE_STRINGS: Final[dict[str, dict[str, str]]] = {
     },
     "en": {
         "no_rain": "No rain expected",
+        "raining_now": "Raining now",
         "next_rain_minutes": "in {minutes} minutes",
         "next_rain_hour": "in {hours} hour",
         "next_rain_hour_minutes": "in {hours} hour and {minutes} minutes",

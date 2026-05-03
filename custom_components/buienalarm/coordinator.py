@@ -174,39 +174,52 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Determine "currently raining" from the forecast point that
         # corresponds to *now*, not blindly from forecast[0]. forecast[0]
-        # may be in the past (when the API's 'start' precedes our poll
-        # time) or in the future (when 'start' lies ahead), so it can
-        # disagree with the actual present-time precipitation level.
-        # We walk the forecast once: the last past-or-equal point gives
-        # us the present, and future points give us upcoming transitions.
+        # may be in the past, present, or near-future depending on how
+        # the API's 'start' aligns with our poll time.
+        #
+        # We walk the forecast once:
+        #   - The last past-or-equal point IS "currently". Track it.
+        #   - Future points reveal upcoming dry<->wet transitions.
+        #
+        # When the API rounds 'start' forward (so every sample is in
+        # the future), there is no past-or-equal point to consult. In
+        # that case we use the very first forecast point as a proxy for
+        # "now", because that's what the API itself considers current.
+        # Without this fallback, an all-future, all-wet forecast would
+        # have currently_raining=False and the headline would report
+        # the first future sample as a "next shower start" — which is
+        # wrong: it's not a transition, it's the present state.
         shower_start_ts: float | None = None
         shower_end_ts: float | None = None
 
-        # prev_wet starts at None; the first past point we see seeds it.
-        # If the entire forecast is in the future (no past points), we
-        # treat 'before the forecast began' as dry.
         prev_wet: bool | None = None
-        currently_raining = False  # final value set during the loop
+        seen_past = False
+        currently_raining = False
 
         for item in forecast:
             ts = item[ATTR_TIME]
             is_wet = item[ATTR_PRECIPITATION] >= RAIN_THRESHOLD
 
             if ts <= now_ts:
-                # Past or present point: just track running 'wet' state.
+                # Past or present point: track running 'wet' state and
+                # record it as the current value.
                 prev_wet = is_wet
-                # The most recent past-or-equal point IS "currently
-                # raining" — keep updating until we cross into the future.
                 currently_raining = is_wet
+                seen_past = True
                 continue
 
-            # First future iteration: if we never saw a past point,
-            # initialise prev_wet from the assumption the period before
-            # the forecast started was dry. This only triggers when the
-            # whole forecast lies ahead of us, which is unusual but
-            # possible for a freshly-started integration.
-            if prev_wet is None:
-                prev_wet = False
+            # First future iteration after no past points: this is the
+            # API's "now-ish" point, so use it to set currently_raining.
+            # Seed prev_wet to is_wet (not False!) so we don't synthesise
+            # a fake dry->wet transition at this very same point — there's
+            # no actual edge here, just the start of the visible forecast.
+            if not seen_past and prev_wet is None:
+                currently_raining = is_wet
+                prev_wet = is_wet
+                seen_past = True  # only do this once
+                # No transition can have happened yet at the very first
+                # data point, so skip ahead to the next iteration.
+                continue
 
             # Transition from dry -> wet = a shower starts at this point.
             if is_wet and not prev_wet and shower_start_ts is None:
@@ -239,6 +252,12 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             period_start_text = next_event_local.strftime("%H:%M")
             relative = self._relative_time(next_event_local)
             next_rain_text = f"{period_start_text} ({relative})"
+        elif currently_raining:
+            # It's raining right now and the forecast window contains no
+            # wet -> dry transition (e.g. all-wet forecast). Reflect the
+            # present state instead of falling through to "no rain".
+            period_start_text = "-"
+            next_rain_text = self.strings["raining_now"]
         else:
             period_start_text = "-"
             next_rain_text = self.strings["no_rain"]
