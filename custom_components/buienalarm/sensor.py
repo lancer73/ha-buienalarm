@@ -84,37 +84,24 @@ LEVEL_DESCRIPTIONS: tuple[BuienAlarmSensorDescription, ...] = (
     ),
 )
 
-TIMESTAMP_DESCRIPTIONS: tuple[tuple[BuienAlarmSensorDescription, str], ...] = (
-    (
-        BuienAlarmSensorDescription(
-            key="shower_start",
-            translation_key="shower_start",
-            device_class=SensorDeviceClass.TIMESTAMP,
-            entity_category=EntityCategory.DIAGNOSTIC,
-            icon="mdi:weather-pouring",
-            value_fn=lambda d: d.get(DATA_SHOWER_START),
-        ),
-        "shower_start_name",
+TIMESTAMP_DESCRIPTIONS: tuple[BuienAlarmSensorDescription, ...] = (
+    BuienAlarmSensorDescription(
+        key="shower_start",
+        translation_key="shower_start",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:weather-pouring",
+        value_fn=lambda d: d.get(DATA_SHOWER_START),
     ),
-    (
-        BuienAlarmSensorDescription(
-            key="shower_end",
-            translation_key="shower_end",
-            device_class=SensorDeviceClass.TIMESTAMP,
-            entity_category=EntityCategory.DIAGNOSTIC,
-            icon="mdi:weather-partly-rainy",
-            value_fn=lambda d: d.get(DATA_SHOWER_END),
-        ),
-        "shower_end_name",
+    BuienAlarmSensorDescription(
+        key="shower_end",
+        translation_key="shower_end",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:weather-partly-rainy",
+        value_fn=lambda d: d.get(DATA_SHOWER_END),
     ),
 )
-
-# Map description key -> language-strings key for fallback names.
-_LEVEL_NAME_KEYS = {
-    "level_light": "level_light_name",
-    "level_moderate": "level_moderate_name",
-    "level_heavy": "level_heavy_name",
-}
 
 
 async def async_setup_entry(
@@ -129,23 +116,12 @@ async def async_setup_entry(
         BuienAlarmStatusSensor(coordinator, entry.entry_id),
     ]
 
-    for description, name_key in TIMESTAMP_DESCRIPTIONS:
+    for description in TIMESTAMP_DESCRIPTIONS + LEVEL_DESCRIPTIONS:
         entities.append(
             BuienAlarmGenericSensor(
                 coordinator,
                 entry.entry_id,
                 description=description,
-                fallback_name=coordinator.strings[name_key],
-            )
-        )
-
-    for description in LEVEL_DESCRIPTIONS:
-        entities.append(
-            BuienAlarmGenericSensor(
-                coordinator,
-                entry.entry_id,
-                description=description,
-                fallback_name=coordinator.strings[_LEVEL_NAME_KEYS[description.key]],
             )
         )
 
@@ -187,7 +163,6 @@ class BuienAlarmStatusSensor(
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry_id}_next_rain"
         self._attr_device_info = _build_device_info(coordinator)
-        self._attr_name = coordinator.strings["sensor_name"]
 
     @property
     def native_value(self) -> str | None:
@@ -239,14 +214,12 @@ class BuienAlarmGenericSensor(
         coordinator: BuienAlarmDataUpdateCoordinator,
         entry_id: str,
         description: BuienAlarmSensorDescription,
-        fallback_name: str,
     ) -> None:
         """Initialise the generic sensor."""
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
         self._attr_device_info = _build_device_info(coordinator)
-        self._attr_name = fallback_name
 
     @property
     def native_value(self) -> Any:

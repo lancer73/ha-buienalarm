@@ -30,13 +30,12 @@ from .const import (
     DATA_RAW,
     DATA_SHOWER_END,
     DATA_SHOWER_START,
-    DEFAULT_LANGUAGE,
     DOMAIN,
-    LANGUAGE_STRINGS,
     PERIOD_DRY,
     PERIOD_NONE,
     PERIOD_WET,
     RAIN_THRESHOLD,
+    resolve_language,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,7 +60,7 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.latitude = latitude
         self.longitude = longitude
         self.language = language
-        self.strings = LANGUAGE_STRINGS.get(language, LANGUAGE_STRINGS[DEFAULT_LANGUAGE])
+        self.strings = resolve_language(language)
         self._session = session
 
         super().__init__(
