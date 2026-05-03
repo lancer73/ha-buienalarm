@@ -5,6 +5,77 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-05-03
+
+### Added
+
+- **Nine new locales** for both the next-shower state text (`LANGUAGE_STRINGS`)
+  and the Home Assistant UI translations (`translations/`):
+  - `fr` — French
+  - `es` — Spanish
+  - `pt` — Portuguese (Portugal)
+  - `pt-BR` — Portuguese (Brazil)
+  - `fy` — West Frisian (Frysk)
+  - `tr` — Turkish
+  - `ar` — Arabic (Modern Standard)
+  - `de` — German
+  - `de-CH` — Swiss German
+
+  > **Help wanted:** these translations were generated as machine-quality
+  > starting points and have **not been reviewed by native speakers**.
+  > Native speakers are warmly invited to open a pull request with
+  > corrections — small fixes are very welcome.
+
+- **`resolve_language()` helper** in `const.py` for robust state-text
+  language lookup. Lookup is case-insensitive and falls back through:
+  exact match → base language (e.g. `pt-PT` → `pt`) → English. This
+  protects the integration from typos and unfamiliar locale codes.
+
+### Changed
+
+- The `language` config-flow option now offers 11 choices instead of 2.
+  Existing entries with `language: nl` or `language: en` continue to work
+  unchanged.
+
+### Notes
+
+- **`de-AT` (Austrian German) was deliberately not added as a separate
+  locale.** Austria uses standard German, and the differences from `de-DE`
+  are vocabulary (e.g. *Jänner* vs *Januar*) that don't appear in any of
+  these strings. Users in Austria with HA UI set to `de-AT` will fall
+  through to `de` automatically via `resolve_language`.
+- **Moroccan Darija was deliberately not added.** Morocco's written
+  language is Modern Standard Arabic (now available as `ar`); spoken
+  Darija has no commonly-used locale code and no HA support.
+
+## [1.0.4] - 2026-05-03
+
+### Changed
+
+- **Cleaned up the split between `LANGUAGE_STRINGS` (in `const.py`) and the
+  HA translation files.** The two systems serve different purposes and
+  were getting mixed up:
+  - `LANGUAGE_STRINGS` is for the *state value* of the next-shower text
+    sensor (e.g. `"in 30 minutes"` vs `"over 30 minuten"`). The user
+    picks this language at config time and it can differ from the HA UI
+    locale — useful when running an English UI but wanting Dutch state
+    text on the dashboard, or vice-versa.
+  - `translations/{en,nl}.json` is for entity *names* and config-flow
+    labels. These follow the HA UI locale.
+- Removed the entity-name fallback strings (`sensor_name`,
+  `shower_start_name`, `shower_end_name`, `level_*_name`) from
+  `LANGUAGE_STRINGS` — they duplicated the proper translation files and
+  were never reached because every entity already declares a
+  `translation_key`. Entity names now come exclusively from
+  `translations/{en,nl}.json`.
+- Simplified `sensor.py` accordingly: the `(description, name_key)`
+  tuple wrapper for timestamp descriptions is gone, the `_LEVEL_NAME_KEYS`
+  map is gone, and the `fallback_name` parameter on `BuienAlarmGenericSensor`
+  is gone. Less code, single source of truth for entity names.
+
+No user-visible changes are expected. Entity names continue to display
+correctly in both locales.
+
 ## [1.0.3] - 2026-05-03
 
 ### Fixed
@@ -182,6 +253,8 @@ Home Assistant integration conventions and the file layout HACS expects.
 
 Initial public versions. See git history for details.
 
+[1.1.0]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.0
+[1.0.4]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.4
 [1.0.3]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.3
 [1.0.2]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.2
 [1.0.1]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.1
