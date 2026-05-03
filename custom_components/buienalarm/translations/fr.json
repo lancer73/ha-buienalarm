@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Saisissez l'emplacement pour lequel récupérer les prévisions de pluie.",
+        "data": {
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "scan_interval": "Intervalle de mise à jour (minutes)",
+          "language": "Langue"
+        },
+        "data_description": {
+          "latitude": "Latitude de l'emplacement à prévoir.",
+          "longitude": "Longitude de l'emplacement à prévoir.",
+          "scan_interval": "Fréquence de mise à jour des données (1-60 minutes).",
+          "language": "Langue utilisée pour le texte d'état lisible."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Échec de la connexion à BuienAlarm.",
+      "invalid_response": "BuienAlarm a renvoyé une réponse inattendue.",
+      "unknown": "Erreur inattendue."
+    },
+    "abort": {
+      "already_configured": "Cet emplacement est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Intervalle de mise à jour (minutes)",
+          "language": "Langue"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Prochaine averse"
+      },
+      "shower_start": {
+        "name": "Début de la prochaine averse"
+      },
+      "shower_end": {
+        "name": "Fin de l'averse en cours"
+      },
+      "level_light": {
+        "name": "Seuil léger"
+      },
+      "level_moderate": {
+        "name": "Seuil modéré"
+      },
+      "level_heavy": {
+        "name": "Seuil fort"
+      }
+    }
+  }
+}

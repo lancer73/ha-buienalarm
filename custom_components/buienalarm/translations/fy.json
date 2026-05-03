@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Fier de lokaasje yn dêr't reinfoarsizzingen foar ophelle wurde moatte.",
+        "data": {
+          "latitude": "Breedtegraad",
+          "longitude": "Lingtegraad",
+          "scan_interval": "Ferfarskingsinterfal (minuten)",
+          "language": "Taal"
+        },
+        "data_description": {
+          "latitude": "Breedtegraad fan de te foarsizzen lokaasje.",
+          "longitude": "Lingtegraad fan de te foarsizzen lokaasje.",
+          "scan_interval": "Hoe faak gegevens ferfarske wurde (1-60 minuten).",
+          "language": "Taal foar de lêsbere statustekst."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Ferbining mei BuienAlarm mislearre.",
+      "invalid_response": "BuienAlarm joech in ûnferwacht antwurd.",
+      "unknown": "Unferwachte flater."
+    },
+    "abort": {
+      "already_configured": "Dizze lokaasje is al konfigurearre."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Ferfarskingsinterfal (minuten)",
+          "language": "Taal"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Folgjende bui"
+      },
+      "shower_start": {
+        "name": "Start fan de folgjende bui"
+      },
+      "shower_end": {
+        "name": "Ein fan de hjoeddeiske bui"
+      },
+      "level_light": {
+        "name": "Drompel licht"
+      },
+      "level_moderate": {
+        "name": "Drompel matich"
+      },
+      "level_heavy": {
+        "name": "Drompel swier"
+      }
+    }
+  }
+}

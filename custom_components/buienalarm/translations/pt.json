@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Introduza a localização para obter previsões de chuva.",
+        "data": {
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "scan_interval": "Intervalo de atualização (minutos)",
+          "language": "Idioma"
+        },
+        "data_description": {
+          "latitude": "Latitude da localização a prever.",
+          "longitude": "Longitude da localização a prever.",
+          "scan_interval": "Frequência de atualização dos dados (1-60 minutos).",
+          "language": "Idioma utilizado para o texto de estado legível."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Falha ao ligar ao BuienAlarm.",
+      "invalid_response": "O BuienAlarm devolveu uma resposta inesperada.",
+      "unknown": "Erro inesperado."
+    },
+    "abort": {
+      "already_configured": "Esta localização já está configurada."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Intervalo de atualização (minutos)",
+          "language": "Idioma"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Próximo aguaceiro"
+      },
+      "shower_start": {
+        "name": "Início do próximo aguaceiro"
+      },
+      "shower_end": {
+        "name": "Fim do aguaceiro atual"
+      },
+      "level_light": {
+        "name": "Limite leve"
+      },
+      "level_moderate": {
+        "name": "Limite moderado"
+      },
+      "level_heavy": {
+        "name": "Limite forte"
+      }
+    }
+  }
+}

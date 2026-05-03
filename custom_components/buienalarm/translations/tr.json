@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Yağmur tahminlerinin alınacağı konumu girin.",
+        "data": {
+          "latitude": "Enlem",
+          "longitude": "Boylam",
+          "scan_interval": "Tarama aralığı (dakika)",
+          "language": "Dil"
+        },
+        "data_description": {
+          "latitude": "Tahmin yapılacak konumun enlemi.",
+          "longitude": "Tahmin yapılacak konumun boylamı.",
+          "scan_interval": "Verilerin yenilenme sıklığı (1-60 dakika).",
+          "language": "Okunabilir durum metni için kullanılan dil."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "BuienAlarm bağlantısı kurulamadı.",
+      "invalid_response": "BuienAlarm beklenmeyen bir yanıt döndürdü.",
+      "unknown": "Beklenmeyen hata."
+    },
+    "abort": {
+      "already_configured": "Bu konum zaten yapılandırılmış."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Tarama aralığı (dakika)",
+          "language": "Dil"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Sıradaki yağmur"
+      },
+      "shower_start": {
+        "name": "Sıradaki yağmurun başlangıcı"
+      },
+      "shower_end": {
+        "name": "Mevcut yağmurun bitişi"
+      },
+      "level_light": {
+        "name": "Hafif eşik"
+      },
+      "level_moderate": {
+        "name": "Orta eşik"
+      },
+      "level_heavy": {
+        "name": "Şiddetli eşik"
+      }
+    }
+  }
+}

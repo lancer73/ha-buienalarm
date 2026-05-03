@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Geben Sie den Ort ein, für den Regenvorhersagen abgerufen werden sollen.",
+        "data": {
+          "latitude": "Breitengrad",
+          "longitude": "Längengrad",
+          "scan_interval": "Abrufintervall (Minuten)",
+          "language": "Sprache"
+        },
+        "data_description": {
+          "latitude": "Breitengrad des vorherzusagenden Ortes.",
+          "longitude": "Längengrad des vorherzusagenden Ortes.",
+          "scan_interval": "Wie oft Daten aktualisiert werden (1-60 Minuten).",
+          "language": "Sprache für den lesbaren Statustext."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zu BuienAlarm fehlgeschlagen.",
+      "invalid_response": "BuienAlarm hat eine unerwartete Antwort zurückgegeben.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Dieser Ort ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Abrufintervall (Minuten)",
+          "language": "Sprache"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Nächster Schauer"
+      },
+      "shower_start": {
+        "name": "Beginn des nächsten Schauers"
+      },
+      "shower_end": {
+        "name": "Ende des aktuellen Schauers"
+      },
+      "level_light": {
+        "name": "Schwelle leicht"
+      },
+      "level_moderate": {
+        "name": "Schwelle mittel"
+      },
+      "level_heavy": {
+        "name": "Schwelle stark"
+      }
+    }
+  }
+}

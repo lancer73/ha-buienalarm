@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "Introduce la ubicación para obtener pronósticos de lluvia.",
+        "data": {
+          "latitude": "Latitud",
+          "longitude": "Longitud",
+          "scan_interval": "Intervalo de actualización (minutos)",
+          "language": "Idioma"
+        },
+        "data_description": {
+          "latitude": "Latitud de la ubicación a pronosticar.",
+          "longitude": "Longitud de la ubicación a pronosticar.",
+          "scan_interval": "Frecuencia con la que se actualizan los datos (1-60 minutos).",
+          "language": "Idioma utilizado para el texto de estado legible."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se pudo conectar con BuienAlarm.",
+      "invalid_response": "BuienAlarm devolvió una respuesta inesperada.",
+      "unknown": "Error inesperado."
+    },
+    "abort": {
+      "already_configured": "Esta ubicación ya está configurada."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Intervalo de actualización (minutos)",
+          "language": "Idioma"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "Próximo chubasco"
+      },
+      "shower_start": {
+        "name": "Inicio del próximo chubasco"
+      },
+      "shower_end": {
+        "name": "Fin del chubasco actual"
+      },
+      "level_light": {
+        "name": "Umbral ligero"
+      },
+      "level_moderate": {
+        "name": "Umbral moderado"
+      },
+      "level_heavy": {
+        "name": "Umbral fuerte"
+      }
+    }
+  }
+}

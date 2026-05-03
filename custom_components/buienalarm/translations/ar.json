@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BuienAlarm",
+        "description": "أدخل الموقع للحصول على توقعات هطول الأمطار.",
+        "data": {
+          "latitude": "خط العرض",
+          "longitude": "خط الطول",
+          "scan_interval": "فاصل التحديث (دقائق)",
+          "language": "اللغة"
+        },
+        "data_description": {
+          "latitude": "خط عرض الموقع المراد التنبؤ به.",
+          "longitude": "خط طول الموقع المراد التنبؤ به.",
+          "scan_interval": "مدى تكرار تحديث البيانات (1-60 دقيقة).",
+          "language": "اللغة المستخدمة لنص الحالة القابل للقراءة."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "فشل الاتصال بـ BuienAlarm.",
+      "invalid_response": "أعاد BuienAlarm استجابة غير متوقعة.",
+      "unknown": "خطأ غير متوقع."
+    },
+    "abort": {
+      "already_configured": "تم تكوين هذا الموقع بالفعل."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "فاصل التحديث (دقائق)",
+          "language": "اللغة"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_rain": {
+        "name": "الزخة القادمة"
+      },
+      "shower_start": {
+        "name": "بداية الزخة القادمة"
+      },
+      "shower_end": {
+        "name": "نهاية الزخة الحالية"
+      },
+      "level_light": {
+        "name": "عتبة خفيفة"
+      },
+      "level_moderate": {
+        "name": "عتبة متوسطة"
+      },
+      "level_heavy": {
+        "name": "عتبة شديدة"
+      }
+    }
+  }
+}
