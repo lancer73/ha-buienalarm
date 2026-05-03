@@ -5,6 +5,53 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-05-03
+
+### Fixed
+
+- **"Next shower" sensor reporting "no rain expected" while every forecast
+  timeslot showed precipitation.** v1.0.2 correctly determined that
+  `currently_raining` was `True`, but the headline-rendering branch only
+  consulted the upcoming-transition timestamp; with no wet→dry transition
+  in the window (an all-wet forecast), it fell through to the "no rain"
+  string. The headline now distinguishes three cases:
+  - A transition is upcoming → show its time (e.g. `14:25 (in 30 minutes)`)
+  - No transition, currently raining → show the new "Raining now" /
+    "Het regent" string
+  - No transition, currently dry → show "No rain expected" /
+    "Geen regen verwacht" as before
+
+### Added
+
+- New translation strings `raining_now` for the all-wet headline case:
+  `"Raining now"` (English) / `"Het regent"` (Dutch). No new HA UI
+  translation key is needed; this string is read from the language pack
+  passed at config time.
+
+## [1.0.2] - 2026-05-02
+
+### Fixed
+
+- **"Next shower" headline always showing the start of the next shower
+  instead of the end of the current one.** Affected setups where the API's
+  `start` field was rounded forward (so every forecast sample was strictly
+  in the future relative to the integration's poll time). In that case the
+  past-or-equal point loop never ran, `currently_raining` stayed at its
+  default of `False`, and the headline always took the "next start" branch.
+- **All-wet forecast windows reporting "no rain expected".** Same root
+  cause: with no past-or-equal forecast point, `currently_raining` defaulted
+  to `False`, and the all-wet window has no dry→wet transition for the
+  "next start" path to latch onto either, so the headline fell through to
+  "no rain expected" even though every forecast point showed precipitation.
+
+  Both issues are fixed by inferring `currently_raining` from the first
+  future forecast point when no past-or-equal point is available — the API
+  treats the first forecast sample as "now-ish", and the integration now
+  honours that. The transition detector also no longer synthesises a fake
+  dry→wet edge at the seeded boundary, which would otherwise have caused
+  an all-wet forecast to incorrectly report a "shower start" at the very
+  first sample.
+
 ## [1.0.1] - 2026-04-25
 
 ### Fixed
@@ -135,5 +182,8 @@ Home Assistant integration conventions and the file layout HACS expects.
 
 Initial public versions. See git history for details.
 
+[1.0.3]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.3
+[1.0.2]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.2
+[1.0.1]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.1
 [1.0.0]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.0
 [0.1.2]: https://github.com/lancer73/ha-buienalarm/commits/main/
