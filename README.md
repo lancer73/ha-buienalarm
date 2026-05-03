@@ -22,7 +22,8 @@ forecast data for any location in the Netherlands.
 - Configurable through the Home Assistant UI (config flow + options flow)
 - Diagnostics support — download a JSON dump of the integration state for
   troubleshooting, with latitude/longitude redacted automatically
-- Bilingual UI (Dutch and English)
+- Multilingual UI — see [Translations](#translations) below for the
+  full list of supported languages and how to contribute
 - Companion Lovelace card available as a separate HACS install — see
   [Dashboard card](#dashboard-card) below
 
@@ -196,6 +197,54 @@ specifically want the `apexcharts-card` look.
   pinpoint your home address.
 - Existing entries from earlier versions are migrated to the rounded
   unique_id format automatically on first load.
+
+## Translations
+
+The integration supports the following languages for **state text** (the
+human-readable status of the next-shower sensor, e.g. "in 30 minutes" /
+"over 30 minuten") and for the **Home Assistant UI** (entity names,
+config-flow labels):
+
+`nl` (Dutch), `en` (English), `fr` (French), `es` (Spanish),
+`pt` (Portuguese, Portugal), `pt-BR` (Portuguese, Brazil), `fy` (West
+Frisian / Frysk), `tr` (Turkish), `ar` (Arabic, Modern Standard),
+`de` (German), `de-CH` (Swiss German).
+
+The state-text language follows the `language` config option chosen by the
+user. The HA UI labels follow the user's HA UI locale, with a fallback
+chain: exact match → base language (e.g. `pt-PT` → `pt`, `de-AT` → `de`)
+→ English.
+
+### Help wanted: native-speaker review
+
+The translations for every language other than Dutch and English were
+produced as **machine-quality starting points** and have not yet been
+reviewed by native speakers. They are functional, but a native speaker
+will inevitably notice clumsy phrasing or better word choices.
+
+**If you are a native speaker of any of these languages, contributions
+are warmly welcomed**, no matter how small:
+
+- Strings to review live in two places: `custom_components/buienalarm/const.py`
+  (the `LANGUAGE_STRINGS` dict — five state-text strings per language),
+  and `custom_components/buienalarm/translations/<locale>.json` (the
+  HA UI translations — about a dozen strings).
+- Open a pull request with your suggested edits, or open an issue if
+  you'd rather discuss specific phrasing first. Reviews of just one or
+  two strings are valuable too — please don't feel you have to fix
+  every string at once.
+- If your language isn't on the list and you'd like to add it, both
+  files take new entries cleanly; an issue or PR to start the
+  conversation is welcome.
+
+### Notes on what isn't included
+
+- **`de-AT` (Austrian German)** is not a separate locale. Standard German
+  is used; the few Austria-specific words don't appear in any of these
+  strings. HA UIs configured to `de-AT` fall through to `de`.
+- **Moroccan Darija** is not included. Morocco's written language is
+  Modern Standard Arabic, which is available as `ar`. Spoken Darija
+  has no commonly-used locale code and no HA support.
 
 ## Upgrading from 0.1.x
 
