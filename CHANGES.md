@@ -5,6 +5,36 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-09
+
+### Fixed
+
+- **`UpdateFailed: BuienAlarm API returned HTTP 403`.** The BuienAlarm CDN
+  (`cdn-secure.buienalarm.nl`) began rejecting requests that carried the
+  default aiohttp `User-Agent`, breaking all data fetches. Requests now send
+  browser-like headers — a `User-Agent` rotated from a small set of current
+  desktop/mobile strings, plus matching `Accept`, `Accept-Language`,
+  `Referer`, and `Origin` — which restores access.
+
+### Added
+
+- **`API_USER_AGENTS` and `build_api_headers()` in `const.py`.** The header
+  set is built per-request; the `User-Agent` is selected with
+  `secrets.choice` (over `random.choice`) purely to keep static analysis
+  quiet — no cryptographic guarantee is intended or needed.
+
+### Notes
+
+- `Accept-Encoding` is deliberately **not** sent, so aiohttp negotiates
+  compression itself. Advertising Brotli (`br`) without the `brotli` package
+  installed can cause response-decode failures.
+- This is a workaround against an undocumented public endpoint. If BuienAlarm
+  later adds stronger bot detection (TLS fingerprinting, rate limiting, or
+  required tokens), User-Agent rotation will no longer be sufficient and this
+  approach will need revisiting.
+- No configuration, entity, or breaking changes. Users on 1.1.0 only need to
+  update.
+
 ## [1.1.0] - 2026-05-03
 
 ### Added
@@ -253,6 +283,7 @@ Home Assistant integration conventions and the file layout HACS expects.
 
 Initial public versions. See git history for details.
 
+[1.1.1]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.1
 [1.1.0]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.0
 [1.0.4]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.4
 [1.0.3]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.3
