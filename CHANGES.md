@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-09
+
+### Fixed
+
+- **"Failed to connect" when adding the integration, with nothing logged.**
+  The HTTP 403 fix in 1.1.1 updated the data coordinator but missed the
+  config flow, which performs its own independent connectivity check
+  (`_validate_api`) against the same CDN. That request still used the
+  default aiohttp `User-Agent`, so the CDN returned 403, the flow took its
+  `cannot_connect` branch, and setup failed. The check now sends the same
+  browser-like headers via `build_api_headers()`, so adding the integration
+  works again.
+
+### Notes
+
+- The `cannot_connect` and `invalid_response` branches of the config flow
+  still emit no log output, so a future setup-time connection failure will
+  again surface only as "Failed to connect". Adding diagnostic logging to
+  those branches is deferred to a separate change.
+- No configuration, entity, or breaking changes. This completes the 403
+  fix begun in 1.1.1 by covering the second place the API is called.
+
 ## [1.1.1] - 2026-06-09
 
 ### Fixed
@@ -283,6 +305,7 @@ Home Assistant integration conventions and the file layout HACS expects.
 
 Initial public versions. See git history for details.
 
+[1.1.2]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.2
 [1.1.1]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.1
 [1.1.0]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.0
 [1.0.4]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.0.4
