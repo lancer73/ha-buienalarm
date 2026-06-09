@@ -35,6 +35,7 @@ from .const import (
     PERIOD_NONE,
     PERIOD_WET,
     RAIN_THRESHOLD,
+    build_api_headers,
     resolve_language,
 )
 
@@ -82,7 +83,9 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         try:
             async with asyncio.timeout(API_TIMEOUT):
-                async with self._session.get(API_URL, params=params) as response:
+                async with self._session.get(
+                    API_URL, params=params, headers=build_api_headers()
+                ) as response:
                     if response.status != 200:
                         raise UpdateFailed(
                             f"BuienAlarm API returned HTTP {response.status}"

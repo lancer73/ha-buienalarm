@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from typing import Final
 
 DOMAIN: Final = "buienalarm"
@@ -54,6 +55,44 @@ PERIOD_NONE: Final = "nan"
 API_URL: Final = "https://cdn-secure.buienalarm.nl/api/3.4/forecast.php"
 API_TIMEOUT: Final = 30  # seconds
 RAIN_THRESHOLD: Final = 0.1  # mm/h
+
+# The BuienAlarm CDN began returning HTTP 403 to requests carrying the
+# default aiohttp User-Agent. Sending a browser-like User-Agent (rotated
+# from a small, current set) plus matching Origin/Referer restores access.
+#
+# This is a workaround against an undocumented public endpoint: if BuienAlarm
+# later adds real bot detection (TLS fingerprinting, rate limiting, tokens),
+# rotation will stop helping and this will need revisiting.
+#
+# Note: Accept-Encoding is deliberately omitted so aiohttp negotiates
+# compression itself. Advertising Brotli ("br") without the brotli package
+# installed can cause response-decode failures.
+API_USER_AGENTS: Final[tuple[str, ...]] = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+    "(KHTML, like Gecko) Version/17.6 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 "
+    "Safari/604.1",
+)
+
+
+def build_api_headers() -> dict[str, str]:
+    """Return browser-like request headers to avoid HTTP 403 from the CDN.
+
+    A User-Agent is chosen at random from API_USER_AGENTS on each call.
+    secrets.choice is used over random.choice purely to keep static
+    analysis (Ruff S311) quiet; no cryptographic guarantee is needed here.
+    """
+    return {
+        "User-Agent": secrets.choice(API_USER_AGENTS),
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Referer": "https://www.buienalarm.nl/",
+        "Origin": "https://www.buienalarm.nl",
+    }
 
 # State-text strings for the next-shower sensor.
 #
