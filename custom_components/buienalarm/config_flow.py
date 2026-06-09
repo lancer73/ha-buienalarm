@@ -37,10 +37,37 @@ from .coordinator import create_session
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _clean_coordinate(value: Any) -> Any:
+    """Normalise a coordinate before HA's cv.latitude/cv.longitude runs.
+
+    Pasting a coordinate from a map or document frequently brings along
+    junk that makes validation fail in confusing ways:
+      - leading/trailing whitespace or a stray newline from a copy-paste,
+      - non-breaking spaces (U+00A0) instead of regular spaces,
+      - a comma decimal separator ("52,06") as used in NL/most of the EU,
+      - a surrounding pair of quotes.
+
+    This strips that noise and converts a comma decimal to a dot so the
+    downstream float coercion sees a clean value. Non-string input (already
+    a float, e.g. from HA's location picker) is passed through untouched.
+    Anything that still isn't a number is handed to cv.* unchanged, which
+    raises the normal validation error.
+    """
+    if not isinstance(value, str):
+        return value
+    cleaned = value.strip().strip("\"'").replace("\u00a0", "").replace(" ", "")
+    # Only treat a comma as a decimal separator when there's no dot already,
+    # so we never mangle a genuine "52.06" or an unexpected "1,234.5".
+    if "," in cleaned and "." not in cleaned:
+        cleaned = cleaned.replace(",", ".")
+    return cleaned
+
+
 USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_LATITUDE): cv.latitude,
-        vol.Required(CONF_LONGITUDE): cv.longitude,
+        vol.Required(CONF_LATITUDE): vol.All(_clean_coordinate, cv.latitude),
+        vol.Required(CONF_LONGITUDE): vol.All(_clean_coordinate, cv.longitude),
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
             vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)
         ),
@@ -113,8 +140,16 @@ class BuienAlarmConfigFlow(ConfigFlow, domain=DOMAIN):
                     user_input[CONF_LATITUDE], user_input[CONF_LONGITUDE]
                 )
             except (aiohttp.ClientError, asyncio.TimeoutError):
+                _LOGGER.warning(
+                    "BuienAlarm connectivity check failed (cannot_connect)",
+                    exc_info=True,
+                )
                 errors["base"] = "cannot_connect"
             except ValueError:
+                _LOGGER.warning(
+                    "BuienAlarm returned an invalid response (invalid_response)",
+                    exc_info=True,
+                )
                 errors["base"] = "invalid_response"
             except Exception:  # pragma: no cover - defensive
                 _LOGGER.exception("Unexpected error validating BuienAlarm API")
