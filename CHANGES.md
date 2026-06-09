@@ -5,6 +5,37 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-06-09
+
+### Added
+
+- **Coordinate input is now sanitised before validation.** Latitude and
+  longitude entered in the config flow are cleaned (`_clean_coordinate`)
+  before Home Assistant's `cv.latitude`/`cv.longitude` run. This absorbs the
+  common copy-paste problems that previously caused a confusing setup
+  failure: leading/trailing whitespace, a stray newline, non-breaking
+  spaces, surrounding quotes, and a comma decimal separator (`52,06` is now
+  read as `52.06`). A comma is only treated as a decimal separator when no
+  dot is present, so genuine values are never altered.
+- **Diagnostic logging on config-flow validation failures.** The
+  `cannot_connect` and `invalid_response` branches now log a warning with a
+  traceback (`exc_info=True`). Previously these failed silently, so a setup
+  problem surfaced only as "Failed to connect" with nothing in the log to
+  explain it.
+
+### Fixed
+
+- **"Failed to connect" caused by a pasted coordinate carrying hidden
+  characters** (e.g. a trailing newline or a comma decimal). Such input is
+  now normalised, so setup no longer fails for this reason. The underlying
+  API connectivity was never the issue in this case.
+
+### Notes
+
+- No configuration, entity, or breaking changes. The diagnostic logging only
+  emits on a failed setup attempt and is intentionally kept in the released
+  code (low noise, high value when something goes wrong).
+
 ## [1.1.2] - 2026-06-09
 
 ### Fixed
@@ -305,6 +336,7 @@ Home Assistant integration conventions and the file layout HACS expects.
 
 Initial public versions. See git history for details.
 
+[1.1.3]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.3
 [1.1.2]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.2
 [1.1.1]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.1
 [1.1.0]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.1.0
