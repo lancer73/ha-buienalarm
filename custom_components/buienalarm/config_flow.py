@@ -31,6 +31,7 @@ from .const import (
     LANGUAGES,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    build_api_headers,
 )
 from .coordinator import create_session
 
@@ -64,6 +65,7 @@ async def _validate_api(latitude: float, longitude: float) -> None:
                     "region": "nl",
                     "unit": "mm/u",
                 },
+                headers=build_api_headers(),
             ) as response:
                 if response.status != 200:
                     raise aiohttp.ClientResponseError(
