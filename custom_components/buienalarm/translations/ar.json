@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "BuienAlarm",
+        "title": "Buien-Alarm",
         "description": "أدخل الموقع للحصول على توقعات هطول الأمطار.",
         "data": {
           "latitude": "خط العرض",
@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "cannot_connect": "فشل الاتصال بـ BuienAlarm.",
-      "invalid_response": "أعاد BuienAlarm استجابة غير متوقعة.",
+      "cannot_connect": "فشل الاتصال بـ Buienradar.",
+      "invalid_response": "أعاد Buienradar استجابة غير متوقعة.",
       "unknown": "خطأ غير متوقع."
     },
     "abort": {

@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "BuienAlarm",
+        "title": "Buien-Alarm",
         "description": "Geben Sie den Ort ein, für den Regenvorhersagen abgerufen werden sollen.",
         "data": {
           "latitude": "Breitengrad",
@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Verbindung zu BuienAlarm fehlgeschlagen.",
-      "invalid_response": "BuienAlarm hat eine unerwartete Antwort zurückgegeben.",
+      "cannot_connect": "Verbindung zu Buienradar fehlgeschlagen.",
+      "invalid_response": "Buienradar hat eine unerwartete Antwort zurückgegeben.",
       "unknown": "Unerwarteter Fehler."
     },
     "abort": {

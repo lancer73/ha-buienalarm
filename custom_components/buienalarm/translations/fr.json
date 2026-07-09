@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "BuienAlarm",
+        "title": "Buien-Alarm",
         "description": "Saisissez l'emplacement pour lequel récupérer les prévisions de pluie.",
         "data": {
           "latitude": "Latitude",
@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Échec de la connexion à BuienAlarm.",
-      "invalid_response": "BuienAlarm a renvoyé une réponse inattendue.",
+      "cannot_connect": "Échec de la connexion à Buienradar.",
+      "invalid_response": "Buienradar a renvoyé une réponse inattendue.",
       "unknown": "Erreur inattendue."
     },
     "abort": {

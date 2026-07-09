@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "BuienAlarm",
+        "title": "Buien-Alarm",
         "description": "Yağmur tahminlerinin alınacağı konumu girin.",
         "data": {
           "latitude": "Enlem",
@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "cannot_connect": "BuienAlarm bağlantısı kurulamadı.",
-      "invalid_response": "BuienAlarm beklenmeyen bir yanıt döndürdü.",
+      "cannot_connect": "Buienradar bağlantısı kurulamadı.",
+      "invalid_response": "Buienradar beklenmeyen bir yanıt döndürdü.",
       "unknown": "Beklenmeyen hata."
     },
     "abort": {

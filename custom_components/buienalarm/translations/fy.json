@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "BuienAlarm",
+        "title": "Buien-Alarm",
         "description": "Fier de lokaasje yn dêr't reinfoarsizzingen foar ophelle wurde moatte.",
         "data": {
           "latitude": "Breedtegraad",
@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Ferbining mei BuienAlarm mislearre.",
-      "invalid_response": "BuienAlarm joech in ûnferwacht antwurd.",
+      "cannot_connect": "Ferbining mei Buienradar mislearre.",
+      "invalid_response": "Buienradar joech in ûnferwacht antwurd.",
       "unknown": "Unferwachte flater."
     },
     "abort": {
