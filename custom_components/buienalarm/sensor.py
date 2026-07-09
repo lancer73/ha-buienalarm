@@ -11,7 +11,6 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.const import UnitOfVolumetricFlux
 from homeassistant.core import HomeAssistant, callback
@@ -22,10 +21,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import BuienAlarmConfigEntry
 from .const import (
+    ATTR_ATTRIBUTION,
     ATTR_NEXT_PERIOD,
     ATTR_NEXT_RAIN_FORECAST,
     ATTR_PERIOD_START,
     ATTR_RAIN_FORECAST,
+    ATTRIBUTION,
+    ATTRIBUTION_URL,
     DATA_LEVEL_HEAVY,
     DATA_LEVEL_LIGHT,
     DATA_LEVEL_MODERATE,
@@ -47,17 +49,24 @@ class BuienAlarmSensorDescription(SensorEntityDescription):
     value_fn: Callable[[dict[str, Any]], Any]
 
 
-# Native unit for the precipitation thresholds. BuienAlarm returns mm/h.
+# Native unit for the precipitation thresholds. The coordinator converts
+# Buienradar's 0-255 byte values to mm/h before they reach the entities.
 PRECIP_UNIT = UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR
 
 
+# Rain-intensity thresholds.
+#
+# These report fixed constants (see const.LEVEL_*): Buienradar's nowcast has
+# no server-supplied `levels` field, unlike the retired Buienalarm API.
+# They therefore carry NO state_class — a value that never changes is
+# configuration, not a measurement, and must not be recorded as statistics.
+# They remain diagnostic entities so existing entity IDs and history survive.
 LEVEL_DESCRIPTIONS: tuple[BuienAlarmSensorDescription, ...] = (
     BuienAlarmSensorDescription(
         key="level_light",
         translation_key="level_light",
         native_unit_of_measurement=PRECIP_UNIT,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
-        state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:weather-rainy",
         value_fn=lambda d: d.get(DATA_LEVEL_LIGHT),
@@ -67,7 +76,6 @@ LEVEL_DESCRIPTIONS: tuple[BuienAlarmSensorDescription, ...] = (
         translation_key="level_moderate",
         native_unit_of_measurement=PRECIP_UNIT,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
-        state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:weather-pouring",
         value_fn=lambda d: d.get(DATA_LEVEL_MODERATE),
@@ -77,7 +85,6 @@ LEVEL_DESCRIPTIONS: tuple[BuienAlarmSensorDescription, ...] = (
         translation_key="level_heavy",
         native_unit_of_measurement=PRECIP_UNIT,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
-        state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:weather-lightning-rainy",
         value_fn=lambda d: d.get(DATA_LEVEL_HEAVY),
@@ -138,11 +145,11 @@ def _build_device_info(coordinator: BuienAlarmDataUpdateCoordinator) -> DeviceIn
                 f"{round(coordinator.longitude, 3)}",
             )
         },
-        name="BuienAlarm",
-        manufacturer="BuienAlarm",
-        model="Forecast",
+        name="Buien-Alarm",
+        manufacturer="Buienradar",
+        model="Rain forecast",
         entry_type=DeviceEntryType.SERVICE,
-        configuration_url="https://www.buienalarm.nl/",
+        configuration_url=ATTRIBUTION_URL,
     )
 
 
@@ -192,8 +199,11 @@ class BuienAlarmStatusSensor(
         """
         data = self.coordinator.data
         if not data:
-            return {}
+            # Attribution is contractual (Buienradar terms) and must be
+            # present even before the first successful refresh.
+            return {ATTR_ATTRIBUTION: ATTRIBUTION}
         return {
+            ATTR_ATTRIBUTION: ATTRIBUTION,
             ATTR_NEXT_RAIN_FORECAST: data.get(DATA_NEXT_RAIN_TEXT),
             ATTR_RAIN_FORECAST: data.get(DATA_PRECIPITATION, []),
             ATTR_NEXT_PERIOD: data.get(DATA_NEXT_PERIOD),

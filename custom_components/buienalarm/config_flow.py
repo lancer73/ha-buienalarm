@@ -26,12 +26,12 @@ from .const import (
     CONF_LONGITUDE,
     CONF_SCAN_INTERVAL,
     DEFAULT_LANGUAGE,
+    DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     LANGUAGES,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
-    build_api_headers,
 )
 from .coordinator import create_session
 
@@ -41,28 +41,20 @@ _LOGGER = logging.getLogger(__name__)
 def _clean_coordinate(value: Any) -> Any:
     """Normalise a coordinate before HA's cv.latitude/cv.longitude runs.
 
-    Pasting a coordinate from a map or document frequently brings along
-    junk that makes validation fail in confusing ways:
-      - leading/trailing whitespace or a stray newline from a copy-paste,
-      - non-breaking spaces (U+00A0) instead of regular spaces,
-      - a comma decimal separator ("52,06") as used in NL/most of the EU,
-      - a surrounding pair of quotes.
-
-    This strips that noise and converts a comma decimal to a dot so the
-    downstream float coercion sees a clean value. Non-string input (already
-    a float, e.g. from HA's location picker) is passed through untouched.
-    Anything that still isn't a number is handed to cv.* unchanged, which
-    raises the normal validation error.
+    Pasted coordinates frequently carry junk that makes validation fail in
+    confusing ways: stray whitespace or a newline, non-breaking spaces, a
+    comma decimal separator ("52,06"), or surrounding quotes. Strip that and
+    convert a comma decimal to a dot. Non-string input (already a float) is
+    passed through untouched.
     """
     if not isinstance(value, str):
         return value
     cleaned = value.strip().strip("\"'").replace("\u00a0", "").replace(" ", "")
-    # Only treat a comma as a decimal separator when there's no dot already,
-    # so we never mangle a genuine "52.06" or an unexpected "1,234.5".
+    # Only treat a comma as a decimal separator when no dot is present, so a
+    # genuine "52.06" or an unexpected "1,234.5" is never mangled.
     if "," in cleaned and "." not in cleaned:
         cleaned = cleaned.replace(",", ".")
     return cleaned
-
 
 USER_DATA_SCHEMA = vol.Schema(
     {
@@ -87,12 +79,9 @@ async def _validate_api(latitude: float, longitude: float) -> None:
             async with session.get(
                 API_URL,
                 params={
-                    "lat": latitude,
-                    "lon": longitude,
-                    "region": "nl",
-                    "unit": "mm/u",
+                    "lat": f"{latitude:.4f}",
+                    "lon": f"{longitude:.4f}",
                 },
-                headers=build_api_headers(),
             ) as response:
                 if response.status != 200:
                     raise aiohttp.ClientResponseError(
@@ -102,7 +91,7 @@ async def _validate_api(latitude: float, longitude: float) -> None:
                     )
                 # Validate it's actually JSON; an HTML error page would slip past
                 # the status check.
-                payload = await response.json(content_type=None)
+                payload = await response.text()
         # A 200 OK that isn't a JSON object means we're talking to the wrong
         # endpoint or the API has changed shape; flag as invalid_response.
         if not isinstance(payload, dict):
@@ -141,13 +130,13 @@ class BuienAlarmConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except (aiohttp.ClientError, asyncio.TimeoutError):
                 _LOGGER.warning(
-                    "BuienAlarm connectivity check failed (cannot_connect)",
+                    "Buienradar connectivity check failed (cannot_connect)",
                     exc_info=True,
                 )
                 errors["base"] = "cannot_connect"
             except ValueError:
                 _LOGGER.warning(
-                    "BuienAlarm returned an invalid response (invalid_response)",
+                    "Buienradar returned an invalid response (invalid_response)",
                     exc_info=True,
                 )
                 errors["base"] = "invalid_response"
@@ -157,7 +146,7 @@ class BuienAlarmConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 # Title rounded to 2 decimals (~1.1 km) for the same reason.
                 title = (
-                    f"BuienAlarm ({round(user_input[CONF_LATITUDE], 2)}, "
+                    f"{DEFAULT_NAME} ({round(user_input[CONF_LATITUDE], 2)}, "
                     f"{round(user_input[CONF_LONGITUDE], 2)})"
                 )
                 return self.async_create_entry(title=title, data=user_input)

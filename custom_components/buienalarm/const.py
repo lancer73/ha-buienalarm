@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import secrets
 from typing import Final
 
 DOMAIN: Final = "buienalarm"
@@ -14,7 +13,7 @@ CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_LANGUAGE: Final = "language"
 
 # Defaults
-DEFAULT_NAME: Final = "BuienAlarm"
+DEFAULT_NAME: Final = "Buien-Alarm"  # user-visible name; domain stays "buienalarm"
 DEFAULT_SCAN_INTERVAL: Final = 5  # minutes
 DEFAULT_LANGUAGE: Final = "nl"
 MIN_SCAN_INTERVAL: Final = 3
@@ -33,6 +32,7 @@ ATTR_PRECIPITATION: Final = "precip"
 ATTR_NEXT_PERIOD: Final = "period_type"
 ATTR_PERIOD_START: Final = "period_start"
 ATTR_TIME: Final = "attime"
+ATTR_ATTRIBUTION: Final = "attribution"
 
 # Coordinator data dict keys
 DATA_NEXT_RAIN_TEXT: Final = "next_rain_text"
@@ -42,9 +42,9 @@ DATA_PRECIPITATION: Final = "precipitation"
 DATA_RAW: Final = "raw_data"
 DATA_SHOWER_START: Final = "shower_start"  # datetime | None
 DATA_SHOWER_END: Final = "shower_end"      # datetime | None
-DATA_LEVEL_LIGHT: Final = "level_light"        # float | None (mm/h)
-DATA_LEVEL_MODERATE: Final = "level_moderate"  # float | None (mm/h)
-DATA_LEVEL_HEAVY: Final = "level_heavy"        # float | None (mm/h)
+DATA_LEVEL_LIGHT: Final = "level_light"        # float (mm/h, fixed)
+DATA_LEVEL_MODERATE: Final = "level_moderate"  # float (mm/h, fixed)
+DATA_LEVEL_HEAVY: Final = "level_heavy"        # float (mm/h, fixed)
 
 # Period type values
 PERIOD_DRY: Final = "dry"
@@ -52,47 +52,49 @@ PERIOD_WET: Final = "wet"
 PERIOD_NONE: Final = "nan"
 
 # API
-API_URL: Final = "https://cdn-secure.buienalarm.nl/api/3.4/forecast.php"
+# API — Buienradar
+#
+# The original Buienalarm endpoint (cdn-secure.buienalarm.nl) was retired
+# when the Buienalarm site was rebuilt; no public replacement is available.
+# Forecast data is now sourced from Buienradar's free, keyless "raintext"
+# nowcast, which provides the same data class: point precipitation in
+# 5-minute steps over the next two hours.
+#
+# Buienradar's terms of use require attribution. See ATTRIBUTION below; it
+# is surfaced in the README, the integration's device entry, and the
+# `attribution` state attribute on the status sensor. Do not remove it.
+API_URL: Final = "https://gpsgadget.buienradar.nl/data/raintext"
 API_TIMEOUT: Final = 30  # seconds
 RAIN_THRESHOLD: Final = 0.1  # mm/h
 
-# The BuienAlarm CDN began returning HTTP 403 to requests carrying the
-# default aiohttp User-Agent. Sending a browser-like User-Agent (rotated
-# from a small, current set) plus matching Origin/Referer restores access.
+ATTRIBUTION: Final = "Weather forecast data provided by Buienradar.nl"
+ATTRIBUTION_URL: Final = "https://www.buienradar.nl/"
+
+# Buienradar encodes precipitation as a 0-255 byte value, not mm/h.
+# The documented conversion is:  mm/h = 10 ** ((value - BASE) / SCALE)
+# Reference points: 0 -> ~0.0004 mm/h, 77 -> 0.1 mm/h, 109 -> 1.0 mm/h,
+# 141 -> 10.0 mm/h. Note 77 lands exactly on RAIN_THRESHOLD above.
+RAINTEXT_BASE: Final = 109
+RAINTEXT_SCALE: Final = 32
+
+# Intensities below this are rounded down to a clean 0.0 mm/h. A raw value
+# of 0 converts to ~0.0004 mm/h, which is noise, not drizzle.
+RAINTEXT_NOISE_FLOOR: Final = 0.01  # mm/h
+
+# Buienradar reports wall-clock times (HH:MM) with no date and no timezone.
+# They are anchored to this zone before being converted to UTC.
+RAINTEXT_TIMEZONE: Final = "Europe/Amsterdam"
+
+# Rain-intensity thresholds (mm/h).
 #
-# This is a workaround against an undocumented public endpoint: if BuienAlarm
-# later adds real bot detection (TLS fingerprinting, rate limiting, tokens),
-# rotation will stop helping and this will need revisiting.
-#
-# Note: Accept-Encoding is deliberately omitted so aiohttp negotiates
-# compression itself. Advertising Brotli ("br") without the brotli package
-# installed can cause response-decode failures.
-API_USER_AGENTS: Final[tuple[str, ...]] = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
-    "(KHTML, like Gecko) Version/17.6 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) "
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 "
-    "Safari/604.1",
-)
-
-
-def build_api_headers() -> dict[str, str]:
-    """Return browser-like request headers to avoid HTTP 403 from the CDN.
-
-    A User-Agent is chosen at random from API_USER_AGENTS on each call.
-    secrets.choice is used over random.choice purely to keep static
-    analysis (Ruff S311) quiet; no cryptographic guarantee is needed here.
-    """
-    return {
-        "User-Agent": secrets.choice(API_USER_AGENTS),
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Referer": "https://www.buienalarm.nl/",
-        "Origin": "https://www.buienalarm.nl",
-    }
+# The former Buienalarm payload carried these as a `levels` object that
+# could in principle change server-side. Buienradar has no equivalent
+# concept, so they are now fixed constants. Because they never vary, the
+# entities that expose them are diagnostic-only and are NOT recorded as
+# measurement statistics — they describe configuration, not observation.
+LEVEL_LIGHT: Final = 0.1  # mm/h — matches RAIN_THRESHOLD
+LEVEL_MODERATE: Final = 1.0  # mm/h
+LEVEL_HEAVY: Final = 10.0  # mm/h
 
 # State-text strings for the next-shower sensor.
 #

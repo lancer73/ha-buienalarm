@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "BuienAlarm",
+        "title": "Buien-Alarm",
         "description": "Enter the location to fetch rain forecasts for.",
         "data": {
           "latitude": "Latitude",
@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to BuienAlarm.",
-      "invalid_response": "BuienAlarm returned an unexpected response.",
+      "cannot_connect": "Failed to connect to Buienradar.",
+      "invalid_response": "Buienradar returned an unexpected response.",
       "unknown": "Unexpected error."
     },
     "abort": {

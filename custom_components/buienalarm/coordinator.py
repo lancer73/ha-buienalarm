@@ -1,4 +1,8 @@
-"""DataUpdateCoordinator for the BuienAlarm integration."""
+"""DataUpdateCoordinator for the BuienAlarm integration.
+
+Forecast data is sourced from Buienradar's free "raintext" nowcast.
+See const.ATTRIBUTION — Buienradar's terms require attribution.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +11,7 @@ import logging
 import socket
 from datetime import datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import aiohttp
 
@@ -31,11 +36,17 @@ from .const import (
     DATA_SHOWER_END,
     DATA_SHOWER_START,
     DOMAIN,
+    LEVEL_HEAVY,
+    LEVEL_LIGHT,
+    LEVEL_MODERATE,
     PERIOD_DRY,
     PERIOD_NONE,
     PERIOD_WET,
+    RAINTEXT_BASE,
+    RAINTEXT_NOISE_FLOOR,
+    RAINTEXT_SCALE,
+    RAINTEXT_TIMEZONE,
     RAIN_THRESHOLD,
-    build_api_headers,
     resolve_language,
 )
 
@@ -73,38 +84,28 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch and process data from the BuienAlarm API."""
+        """Fetch and process the Buienradar raintext nowcast."""
         params = {
-            "lat": self.latitude,
-            "lon": self.longitude,
-            "region": "nl",
-            "unit": "mm/u",
+            "lat": f"{self.latitude:.4f}",
+            "lon": f"{self.longitude:.4f}",
         }
 
         try:
             async with asyncio.timeout(API_TIMEOUT):
-                async with self._session.get(
-                    API_URL, params=params, headers=build_api_headers()
-                ) as response:
+                async with self._session.get(API_URL, params=params) as response:
                     if response.status != 200:
                         raise UpdateFailed(
-                            f"BuienAlarm API returned HTTP {response.status}"
+                            f"Buienradar API returned HTTP {response.status}"
                         )
-                    data = await response.json(content_type=None)
+                    # The endpoint serves text/plain, not JSON.
+                    raw_text = await response.text()
         except asyncio.TimeoutError as err:
-            raise UpdateFailed("Timeout while fetching BuienAlarm data") from err
+            raise UpdateFailed("Timeout while fetching Buienradar data") from err
         except aiohttp.ClientError as err:
-            raise UpdateFailed(f"Error connecting to BuienAlarm: {err}") from err
-        except ValueError as err:  # JSON decode errors
-            raise UpdateFailed(f"Invalid JSON from BuienAlarm: {err}") from err
-
-        # Defensive: a 200 OK with a non-dict body is a server-side regression.
-        if not isinstance(data, dict):
-            raise UpdateFailed(
-                f"BuienAlarm returned unexpected payload type: {type(data).__name__}"
-            )
+            raise UpdateFailed(f"Error connecting to Buienradar: {err}") from err
 
         try:
+            data = self._parse_raintext(raw_text)
             return self._process(data)
         except (TypeError, ValueError, KeyError, AttributeError) as err:
             # Anything thrown while interpreting a 200 OK payload should be
@@ -112,8 +113,77 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # data stale and entities go 'unavailable', instead of bubbling
             # up as a generic exception.
             raise UpdateFailed(
-                f"Failed to interpret BuienAlarm response: {err}"
+                f"Failed to interpret Buienradar response: {err}"
             ) from err
+
+    @staticmethod
+    def _parse_raintext(text: str) -> dict[str, Any]:
+        """Convert Buienradar's raintext body into the internal payload shape.
+
+        The endpoint returns one ``value|HH:MM`` line per 5-minute step, e.g.::
+
+            000|08:05
+            077|08:10
+
+        ``value`` is a 0-255 byte, not mm/h; it is converted with
+        ``10 ** ((value - BASE) / SCALE)``. Times are local wall-clock with no
+        date, so they are anchored to today in RAINTEXT_TIMEZONE and rolled
+        forward across midnight (the series is strictly increasing in time).
+
+        Returns the same ``{start, delta, precip}`` structure the previous
+        Buienalarm API produced, so ``_process`` is unchanged. Malformed
+        lines are skipped rather than fatal; if fewer than two usable points
+        remain, an empty ``precip`` list is returned and ``_process`` takes
+        its existing 'no usable data' branch.
+        """
+        tz = ZoneInfo(RAINTEXT_TIMEZONE)
+        now_local = dt_util.utcnow().astimezone(tz)
+
+        stamps: list[datetime] = []
+        values: list[float] = []
+        previous: datetime | None = None
+        day_offset = 0
+
+        for line in text.splitlines():
+            line = line.strip()
+            if not line or "|" not in line:
+                continue
+            value_str, _, time_str = line.partition("|")
+            try:
+                raw_value = int(value_str)
+                hour_str, _, minute_str = time_str.partition(":")
+                hour, minute = int(hour_str), int(minute_str)
+                anchored = now_local.replace(
+                    hour=hour, minute=minute, second=0, microsecond=0
+                )
+            except (TypeError, ValueError):
+                # A single malformed line must not sink the whole forecast.
+                continue
+
+            # The series runs forward in time. A timestamp that would land
+            # before its predecessor has wrapped past midnight.
+            candidate = anchored + timedelta(days=day_offset)
+            if previous is not None and candidate < previous:
+                day_offset += 1
+                candidate = anchored + timedelta(days=day_offset)
+            previous = candidate
+
+            intensity = 10 ** ((raw_value - RAINTEXT_BASE) / RAINTEXT_SCALE)
+            if intensity < RAINTEXT_NOISE_FLOOR:
+                # A raw 0 maps to ~0.0004 mm/h. That is noise, not drizzle.
+                intensity = 0.0
+
+            stamps.append(candidate)
+            values.append(round(intensity, 3))
+
+        # Two points are the minimum needed to derive the step interval.
+        if len(stamps) < 2:
+            return {"precip": [], "start": None, "delta": None, "raw": text}
+
+        start = stamps[0].timestamp()
+        delta = (stamps[1] - stamps[0]).total_seconds()
+
+        return {"precip": values, "start": start, "delta": delta, "raw": text}
 
     def _process(self, data: dict[str, Any]) -> dict[str, Any]:
         """Turn the raw API payload into the structure the entities consume."""
@@ -289,30 +359,23 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
 
     @staticmethod
-    def _extract_levels(data: dict[str, Any]) -> dict[str, float | None]:
-        """Pull the light/moderate/heavy thresholds out of the API payload.
+    def _extract_levels(data: dict[str, Any]) -> dict[str, float]:
+        """Return the light/moderate/heavy rain-intensity thresholds (mm/h).
 
-        BuienAlarm returns a 'levels' object containing the mm/h thresholds
-        used for rain-intensity classification. Any missing key — or a
-        non-dict 'levels' field — returns None so the corresponding sensor
-        reports 'unknown'.
+        The former Buienalarm payload supplied these; Buienradar's raintext
+        nowcast has no equivalent field, so they are now fixed constants from
+        const.py. The ``data`` argument is retained for signature stability
+        and is deliberately unused.
+
+        Because these values never change, the entities exposing them are
+        diagnostic-only and carry no state_class — they are configuration,
+        not measurement, and must not be recorded as statistics.
         """
-        raw_levels = data.get("levels")
-        levels: dict[str, Any] = raw_levels if isinstance(raw_levels, dict) else {}
-
-        def _coerce(key: str) -> float | None:
-            raw = levels.get(key)
-            if raw is None:
-                return None
-            try:
-                return float(raw)
-            except (TypeError, ValueError):
-                return None
-
+        del data  # unused; kept so the call sites in _process stay identical
         return {
-            DATA_LEVEL_LIGHT: _coerce("light"),
-            DATA_LEVEL_MODERATE: _coerce("moderate"),
-            DATA_LEVEL_HEAVY: _coerce("heavy"),
+            DATA_LEVEL_LIGHT: LEVEL_LIGHT,
+            DATA_LEVEL_MODERATE: LEVEL_MODERATE,
+            DATA_LEVEL_HEAVY: LEVEL_HEAVY,
         }
 
     def _relative_time(self, target: datetime) -> str:
@@ -334,9 +397,10 @@ class BuienAlarmDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 def create_session(use_ipv4_only: bool = True) -> aiohttp.ClientSession:
     """Create a dedicated aiohttp session.
 
-    BuienAlarm's CDN has had IPv6 reachability issues; forcing IPv4 avoids
-    long timeouts on dual-stack hosts. The session is owned by the
-    integration and closed in async_unload_entry.
+    Forcing IPv4 avoids long timeouts on dual-stack hosts, a problem seen
+    with the previous Buienalarm CDN. It is retained for Buienradar as a
+    conservative default; pass use_ipv4_only=False to allow IPv6. The
+    session is owned by the integration and closed in async_unload_entry.
     """
     if use_ipv4_only:
         connector = aiohttp.TCPConnector(family=socket.AF_INET)
