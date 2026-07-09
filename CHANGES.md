@@ -4,6 +4,89 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.2.0] - 2026-07-09
+
+### Changed
+
+- **BREAKING (data source): forecast data now comes from Buienradar, not
+  Buienalarm.** The Buienalarm endpoint (`cdn-secure.buienalarm.nl`) stopped
+  resolving after the Buienalarm website was rebuilt, and no public
+  replacement was published. The integration now fetches Buienradar's free,
+  keyless `raintext` nowcast (`gpsgadget.buienradar.nl/data/raintext`),
+  which supplies the same data class: point precipitation in 5-minute steps
+  over the next two hours.
+
+  No user action is required. There is no API key, the configured location is
+  unchanged, and all entity IDs, automations, and history are preserved. The
+  integration domain remains `buienalarm` for backwards compatibility.
+
+- **The three rain-intensity threshold sensors now report fixed constants.**
+  `level_light`, `level_moderate`, and `level_heavy` are pinned to `0.1`,
+  `1.0`, and `10.0` mm/h respectively (`const.LEVEL_*`). Buienradar's nowcast
+  has no server-supplied `levels` field, unlike the retired Buienalarm API.
+
+- **The threshold sensors no longer carry `state_class`.** A value that never
+  changes is configuration, not measurement, and must not be recorded as
+  long-term statistics. They remain *diagnostic* entities, so entity IDs and
+  existing history survive, but they will stop varying and will no longer
+  accrue statistics. This is the intended behaviour, not a regression.
+
+- The diagnostics download's `raw` field is now the plain-text Buienradar
+  response rather than a JSON object.
+
+- The device entry is renamed to *Buien-Alarm* (manufacturer: *Buienradar*,
+  model: *Rain forecast*) and its `configuration_url` points at
+  buienradar.nl.
+
+- **The integration is now consistently named *Buien-Alarm* throughout the
+  UI.** This covers `manifest.json` (the name shown in HACS and the *Add
+  integration* dialog), the config-flow title, and the device entry. The
+  integration *domain* remains `buienalarm`, so entity IDs, automations, and
+  existing config entries are unaffected.
+
+- **Config-flow error messages now name Buienradar, not Buienalarm**, across
+  all 12 locale files. These messages describe a failure to reach the *data
+  source*, which is now Buienradar — "Failed to connect to Buien-Alarm"
+  would misattribute the fault to the integration itself. Entity names and
+  all other translated strings are unchanged.
+
+### Added
+
+- **Attribution to Buienradar**, as required by their terms of use. Exposed
+  via the `attribution` state attribute on the next-shower sensor (present
+  even before the first successful refresh) and on the device page. Please
+  do not remove it.
+- `_parse_raintext()` in `coordinator.py`, converting Buienradar's
+  `value|HH:MM` lines into the internal payload shape. It handles the 0-255
+  intensity encoding (`mm/h = 10 ** ((value - 109) / 32)`), anchors the
+  date-less wall-clock timestamps to `Europe/Amsterdam`, and rolls forward
+  correctly across midnight. Malformed lines are skipped rather than fatal.
+- `RAINTEXT_*`, `LEVEL_*`, `ATTRIBUTION`, and `ATTRIBUTION_URL` constants in
+  `const.py`.
+
+### Removed
+
+- `build_api_headers()` and the browser User-Agent rotation added in 1.1.1.
+  These worked around Buienalarm's CDN filtering; the host no longer exists
+  and Buienradar requires no such workaround.
+- The `region` and `unit` query parameters, which were Buienalarm-specific.
+
+### Notes
+
+- `_process()` — the shower-transition detection, `next_rain` text
+  generation, and language handling — is **unchanged**. The new parser
+  produces the same `{start, delta, precip}` structure the previous API did,
+  which confined this migration to the fetch-and-parse layer.
+- The coordinate rounding, diagnostics redaction, and "no raw payload in
+  state attributes" privacy behaviour are all unchanged.
+- Coordinates are sent to Buienradar with each poll, rounded to four decimals
+  (~11 m) in the request. This is inherent to a location-specific forecast.
+- Buienradar's terms of use were reviewed for attribution requirements. They
+  do not specify a polling interval; the integration's default of 5 minutes
+  matches the granularity of the data and is unchanged.
+
+[1.2.0]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.2.0
+
 
 ## [1.1.3] - 2026-06-09
 
