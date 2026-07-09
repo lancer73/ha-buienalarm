@@ -1,16 +1,28 @@
-# BuienAlarm Integration for Home Assistant
+# Buien-Alarm Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Version](https://img.shields.io/github/v/release/lancer73/ha-buienalarm)](https://github.com/lancer73/ha-buienalarm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A Home Assistant integration that uses the BuienAlarm API to provide rain
-forecast data for any location in the Netherlands.
+Buien-Alarm is a Home Assistant integration that provides short-term rain
+forecast data for any location in the Netherlands: precipitation intensity in
+5-minute steps over the next two hours.
+
+**Weather forecast data provided by [Buienradar.nl](https://www.buienradar.nl/).**
+
+> **Data source changed in 1.2.0.** Buien-Alarm originally used the Buienalarm
+> API. That endpoint (`cdn-secure.buienalarm.nl`) was retired when the
+> Buienalarm website was rebuilt, and no public replacement was made
+> available. Since 1.2.0 the integration sources its forecast from
+> Buienradar's free, keyless `raintext` nowcast instead. No API key is
+> required and no action is needed when upgrading — see
+> [Upgrading to 1.2.0](#upgrading-to-120).
 
 > **Disclaimer.** This is an unofficial community integration. It is not
-> affiliated with or endorsed by BuienAlarm. The brand icons shipped in
-> `custom_components/buienalarm/brand/` are generic rain-cloud graphics, not
-> the BuienAlarm trademark.
+> affiliated with or endorsed by Buienradar, Buienalarm, or Infoplaza. The
+> brand icons shipped in `custom_components/buienalarm/brand/` are generic
+> rain-cloud graphics, not anyone's trademark. The integration's domain
+> remains `buienalarm` for backwards compatibility with existing installs.
 
 ## Features
 
@@ -18,7 +30,8 @@ forecast data for any location in the Netherlands.
 - **Next shower start** sensor with `device_class: timestamp`
 - **Current shower end** sensor with `device_class: timestamp`
 - **Rain-intensity threshold** sensors (`level_light`, `level_moderate`,
-  `level_heavy`) with unit `mm/h`
+  `level_heavy`) with unit `mm/h` — diagnostic entities reporting fixed
+  threshold constants
 - Configurable through the Home Assistant UI (config flow + options flow)
 - Diagnostics support — download a JSON dump of the integration state for
   troubleshooting, with latitude/longitude redacted automatically
@@ -41,7 +54,7 @@ For the Dutch version of this README, see [`installation.md`](installation.md).
 2. In HACS, open the menu (top right) → *Custom repositories*.
 3. Add `https://github.com/lancer73/ha-buienalarm` with category
    *Integration*.
-4. Search for *BuienAlarm* in the HACS store and install it.
+4. Search for *Buien-Alarm* in the HACS store and install it.
 5. Restart Home Assistant.
 
 ### Method 2 — Manual
@@ -55,7 +68,7 @@ For the Dutch version of this README, see [`installation.md`](installation.md).
 After installation:
 
 1. Go to *Settings → Devices & services → Add integration*.
-2. Search for *BuienAlarm* and select it.
+2. Search for *Buien-Alarm* and select it.
 3. Provide:
    - **Latitude** and **Longitude** of the location to forecast for
    - **Scan interval** — how often to refresh data (3–60 minutes, default 5)
@@ -77,9 +90,16 @@ A single device is created per configured location, exposing six sensors:
 | Next shower              | Volgende bui             | text      | Human-readable status, e.g. "14:25 (in 30 minutes)"                |
 | Next shower start        | Start volgende bui       | timestamp | When the next shower starts; `unknown` if none in window           |
 | Current shower end       | Einde huidige bui        | timestamp | When the ongoing/upcoming shower ends; `unknown` if none in window |
-| Light threshold          | Drempel licht            | mm/h      | Light-rain threshold reported by the API                           |
-| Moderate threshold       | Drempel gemiddeld        | mm/h      | Moderate-rain threshold                                            |
-| Heavy threshold          | Drempel zwaar            | mm/h      | Heavy-rain threshold                                               |
+| Light threshold          | Drempel licht            | mm/h      | Light-rain threshold — fixed at `0.1` (diagnostic)                 |
+| Moderate threshold       | Drempel gemiddeld        | mm/h      | Moderate-rain threshold — fixed at `1.0` (diagnostic)              |
+| Heavy threshold          | Drempel zwaar            | mm/h      | Heavy-rain threshold — fixed at `10.0` (diagnostic)                |
+
+> The three threshold sensors report **fixed constants**, not measured
+> values. The former Buienalarm API supplied them in its payload; Buienradar's
+> nowcast has no equivalent field. They are marked as *diagnostic* entities
+> and deliberately carry no `state_class`, so Home Assistant does not record
+> them as measurement statistics. They exist so that existing entity IDs,
+> automations, and history remain intact.
 
 The next-shower sensor exposes these state attributes:
 
@@ -89,6 +109,7 @@ The next-shower sensor exposes these state attributes:
 - `period_type` — `wet` (next shower coming), `dry` (current shower will
   end), or `nan` (no transition in window)
 - `period_start` — clock time string (`HH:MM`) of the upcoming transition
+- `attribution` — required source credit for Buienradar
 
 > The `raw_data` attribute that earlier versions exposed has been **removed
 > in 1.0.0**. The full upstream payload is now available through the
@@ -112,7 +133,7 @@ depends on which language you picked. Examples:
   `sensor.buienalarm_drempel_gemiddeld`,
   `sensor.buienalarm_drempel_zwaar`
 
-Open *Settings → Devices & services → BuienAlarm* and click your device to
+Open *Settings → Devices & services → Buien-Alarm* and click your device to
 see the entity IDs that were actually created on your install. The YAML
 examples below assume the English IDs — adjust them for your install.
 
@@ -149,7 +170,7 @@ A companion Lovelace card is available as a separate HACS install:
 It pairs with this integration and reads its sensors directly — no
 templating or `data_generator` needed.
 
-![BuienAlarm Card screenshot](https://raw.githubusercontent.com/lancer73/lovelace-buienalarm-card/main/images/screenshot.png)
+![Buien-Alarm Card screenshot](https://raw.githubusercontent.com/lancer73/lovelace-buienalarm-card/main/images/screenshot.png)
 
 Install it via HACS (*Custom repositories → category Dashboard*), then add
 the card from the Lovelace card picker. Minimal YAML:
@@ -189,8 +210,12 @@ specifically want the `apexcharts-card` look.
 
 ## Privacy and security
 
-- All API calls are HTTPS with default certificate verification.
-- No credentials are required, transmitted, or stored.
+- All API calls are HTTPS with default certificate verification, to
+  `gpsgadget.buienradar.nl`.
+- No credentials or API keys are required, transmitted, or stored.
+- Your coordinates are sent to Buienradar with each poll — this is inherent
+  to requesting a location-specific forecast. They are rounded to four
+  decimals (~11 m) in the request.
 - Latitude and longitude are **redacted** from the diagnostics download.
 - The config-entry `unique_id` and entry title are based on coordinates
   rounded to ~110 m and ~1.1 km respectively, so a registry export does not
@@ -246,6 +271,31 @@ are warmly welcomed**, no matter how small:
   Modern Standard Arabic, which is available as `ar`. Spoken Darija
   has no commonly-used locale code and no HA support.
 
+## Upgrading to 1.2.0
+
+Version 1.2.0 switches the data source from the retired Buienalarm API to
+Buienradar's `raintext` nowcast.
+
+**No action is required.** There is no API key to obtain, your configured
+location is unchanged, and all entity IDs stay the same. Automations and
+history continue to work.
+
+What changes in behaviour:
+
+- The three threshold sensors (`level_light`, `level_moderate`,
+  `level_heavy`) now report fixed constants (`0.1`, `1.0`, `10.0` mm/h)
+  rather than values supplied by the API, and are no longer recorded as
+  measurement statistics. Existing recorded history is retained but the
+  values will stop varying.
+- The forecast window is two hours in 5-minute steps. This matches what the
+  previous API provided in practice.
+- The `raw` payload in the diagnostics download is now the plain-text
+  Buienradar response rather than a JSON object.
+
+Attribution to Buienradar is required by their terms of use and is surfaced
+automatically in the `attribution` state attribute and on the device page.
+Please leave it in place.
+
 ## Upgrading from 0.1.x
 
 Upgrade in place via HACS. On first restart the integration will:
@@ -269,14 +319,14 @@ See [`CHANGES.md`](CHANGES.md) for the full changelog.
 
 If the integration is not working as expected:
 
-1. Open *Settings → Devices & services → BuienAlarm → ⋮ → Download
+1. Open *Settings → Devices & services → Buien-Alarm → ⋮ → Download
    diagnostics* and inspect the JSON. Latitude, longitude, and any other
    sensitive fields are redacted.
-2. Enable debug logging via *Settings → Devices & services → BuienAlarm →
+2. Enable debug logging via *Settings → Devices & services → Buien-Alarm →
    ⋮ → Enable debug logging*, reproduce the issue, then disable debug
    logging — Home Assistant will offer the log file as a download.
 3. Verify your internet connection and that the configured coordinates fall
-   within the BuienAlarm coverage area (the Netherlands and immediately
+   within the Buienradar coverage area (the Netherlands and immediately
    surrounding regions).
 4. Check the Home Assistant log for messages from the `buienalarm` logger.
 
@@ -284,13 +334,19 @@ If the integration is not working as expected:
 
 - [**lovelace-buienalarm-card**](https://github.com/lancer73/lovelace-buienalarm-card)
   — Lovelace card that visualises this integration's sensors. HACS
-  *Dashboard* category. Optional, but recommended.
+  *Dashboard* category. Optional, but recommended. Unaffected by the 1.2.0
+  data-source change.
 
 ## License
 
 This project is licensed under the MIT License — see the [`LICENSE`](LICENSE)
 file for details.
 
-The BuienAlarm name and any official trademarks belong to their respective
-owners. This integration is an unofficial client of BuienAlarm's public
-forecast API.
+Weather forecast data is provided by [Buienradar.nl](https://www.buienradar.nl/).
+Use of that data is subject to Buienradar's terms of use, which require
+attribution; the integration surfaces this credit automatically and it should
+not be removed.
+
+The Buienalarm and Buienradar names and any official trademarks belong to
+their respective owners. This integration is an unofficial client and is not
+affiliated with either.
