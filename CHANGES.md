@@ -4,6 +4,50 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.2.1] - 2026-07-10
+
+Fixes two defects that prevented a **fresh install** of 1.2.0 from completing
+setup. Upgrades from 1.1.x were unaffected, which is why the problems were not
+caught before 1.2.0 was tagged — the migration path does not render the config
+form or run the connectivity check where these bugs lived.
+
+### Fixed
+
+- **Adding the integration crashed with `ValueError: Unable to convert
+  schema` and the config screen never appeared.** The config-flow schema
+  wrapped the latitude/longitude validators in a custom function
+  (`vol.All(_clean_coordinate, cv.latitude)`). Home Assistant serialises the
+  schema to JSON to render the form, and an arbitrary function cannot be
+  serialised, so form rendering failed before any input was possible. The
+  schema now uses the plain `cv.latitude` / `cv.longitude` validators, which
+  serialise correctly.
+
+- **Setup would have failed for every user even with a reachable API,** via a
+  second latent bug: the config-flow connectivity check still tested the
+  response with `isinstance(payload, dict)`, left over from the previous JSON
+  API. Buienradar returns plain text, so that check was always false and
+  raised `invalid_response` on every successful fetch. The check now verifies
+  the response is a raintext body (plain text containing at least one
+  `value|HH:MM` line).
+
+### Removed
+
+- The `_clean_coordinate` coordinate-sanitising helper (introduced in 1.1.3).
+  Home Assistant validates submitted input against the form schema *before*
+  the flow step runs, so the helper only ever executed on already-validated
+  float values and never had any effect. It was also the direct cause of the
+  schema-serialisation crash above. Removed entirely.
+
+### Notes
+
+- No configuration, entity, or data changes. Existing installations
+  (including those upgraded from 1.1.x, which were never broken) require no
+  action beyond updating.
+- Fresh-install and upgrade config-flow paths exercise different code. This
+  release is a reminder to test *both* before tagging: 1.2.0 passed on
+  upgrade but failed from scratch.
+
+[1.2.1]: https://github.com/lancer73/ha-buienalarm/releases/tag/v1.2.1
 ## [1.2.0] - 2026-07-09
 
 ### Changed
