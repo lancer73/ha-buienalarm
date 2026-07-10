@@ -38,28 +38,10 @@ from .coordinator import create_session
 _LOGGER = logging.getLogger(__name__)
 
 
-def _clean_coordinate(value: Any) -> Any:
-    """Normalise a coordinate before HA's cv.latitude/cv.longitude runs.
-
-    Pasted coordinates frequently carry junk that makes validation fail in
-    confusing ways: stray whitespace or a newline, non-breaking spaces, a
-    comma decimal separator ("52,06"), or surrounding quotes. Strip that and
-    convert a comma decimal to a dot. Non-string input (already a float) is
-    passed through untouched.
-    """
-    if not isinstance(value, str):
-        return value
-    cleaned = value.strip().strip("\"'").replace("\u00a0", "").replace(" ", "")
-    # Only treat a comma as a decimal separator when no dot is present, so a
-    # genuine "52.06" or an unexpected "1,234.5" is never mangled.
-    if "," in cleaned and "." not in cleaned:
-        cleaned = cleaned.replace(",", ".")
-    return cleaned
-
 USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_LATITUDE): vol.All(_clean_coordinate, cv.latitude),
-        vol.Required(CONF_LONGITUDE): vol.All(_clean_coordinate, cv.longitude),
+        vol.Required(CONF_LATITUDE): cv.latitude,
+        vol.Required(CONF_LONGITUDE): cv.longitude,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
             vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)
         ),
@@ -92,12 +74,11 @@ async def _validate_api(latitude: float, longitude: float) -> None:
                 # Validate it's actually JSON; an HTML error page would slip past
                 # the status check.
                 payload = await response.text()
-        # A 200 OK that isn't a JSON object means we're talking to the wrong
-        # endpoint or the API has changed shape; flag as invalid_response.
-        if not isinstance(payload, dict):
-            raise ValueError(
-                f"unexpected payload type: {type(payload).__name__}"
-            )
+        # A usable raintext nowcast is plain text containing at least one
+        # "value|HH:MM" line. Anything else (an HTML error page, an empty
+        # body, the wrong endpoint) is flagged as invalid_response.
+        if not isinstance(payload, str) or "|" not in payload:
+            raise ValueError("unexpected payload: not a raintext nowcast")
     finally:
         await session.close()
 
